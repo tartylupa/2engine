@@ -1,5 +1,6 @@
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_log.h>
+#include <SDL3/SDL_video.h>
 #include <SDL3/SDL_vulkan.h>
 #include <stdint.h>
 #include <sys/types.h>
@@ -8,8 +9,13 @@
 #include <vulkan/vulkan_core.h>
 #include "../include/graphics.h"
 #include <stdlib.h>
+#include <stdint.h>
 
-
+static inline uint32_t clamp(uint32_t value, uint32_t min, uint32_t max) {
+    if (value < min) return min;
+    if (value > max) return max;
+    return value;
+}
 
 bool teVkInit(te_struct_init* core) {
 
@@ -183,7 +189,35 @@ bool teCreateSwapchain(te_struct_init* core) {
     VkSurfaceCapabilitiesKHR surfaceCapabiliteies;
     vkGetPhysicalDeviceSurfaceCapabilitiesKHR(core->physicalDevice, core->surface, &surfaceCapabiliteies);
 
-    
+    uint32_t formatCount = 0;
+    vkGetPhysicalDeviceSurfaceFormatsKHR(core->physicalDevice, core->surface, &formatCount, NULL);
+
+    VkSurfaceFormatKHR surfaceFormat[formatCount];
+    vkGetPhysicalDeviceSurfaceFormatsKHR(core->physicalDevice, core->surface, &formatCount, surfaceFormat);
+
+    VkSurfaceFormatKHR choosenFormat = surfaceFormat[0];
+    for (uint32_t i = 0; i < formatCount; i++) {
+        if (surfaceFormat[i].format == VK_FORMAT_B8G8R8A8_SRGB &&surfaceFormat[i].colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
+            choosenFormat = surfaceFormat[i];
+            break;
+        }
+    }
+
+
+    VkExtent2D extent;
+
+    if (surfaceCapabiliteies.currentExtent.width != UINT32_MAX) {
+        extent = surfaceCapabiliteies.currentExtent;
+    } else {
+        int width, height;
+        SDL_GetWindowSizeInPixels(core->window, &width, &height);
+        extent.width = (uint32_t)width;
+        extent.height = (uint32_t)height;
+
+        extent.height = clamp(extent.height, surfaceCapabiliteies.minImageExtent.height, surfaceCapabiliteies.maxImageExtent.height);
+        extent.width = clamp(extent.width, surfaceCapabiliteies.minImageExtent.width, surfaceCapabiliteies.maxImageExtent.width);
+
+    }
 
     VkSwapchainCreateInfoKHR createInfo = {
         .sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
@@ -191,9 +225,32 @@ bool teCreateSwapchain(te_struct_init* core) {
         .surface = core->surface,
         .flags = 0,
         .minImageCount = surfaceCapabiliteies.minImageCount,
+        .imageFormat = choosenFormat.format,
+        .imageColorSpace = choosenFormat.colorSpace,
+        .imageExtent = extent,
+        .imageArrayLayers = 1,
+        .imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+        .compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
+        .presentMode = VK_PRESENT_MODE_FIFO_KHR,
+        .clipped = VK_TRUE,
+        .oldSwapchain = VK_NULL_HANDLE,
     };
 
+    uint32_t queueIndices[] = { core->graphicsFamily, core->presentFamily };
+
+    if (core->graphicsFamily != core->presentFamily) {
+        createInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
+        createInfo.queueFamilyIndexCount = 2;
+        createInfo.pQueueFamilyIndices = queueIndices;
+    } else {
+        createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+        createInfo.queueFamilyIndexCount = 0;
+        createInfo.pQueueFamilyIndices = NULL;
+    }
+
     vkCreateSwapchainKHR(core->device, &createInfo, NULL, &core->swapchain);
+
+    return true;
 }
 
 
