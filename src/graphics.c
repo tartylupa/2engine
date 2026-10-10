@@ -2,6 +2,8 @@
 #include <SDL3/SDL_log.h>
 #include <SDL3/SDL_video.h>
 #include <SDL3/SDL_vulkan.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <stdint.h>
 #include <sys/types.h>
 #include <vulkan/vulkan.h>
@@ -160,7 +162,8 @@ bool teGetLogicalDevice(te_struct_init *core) {
     };
 
     const char* deviceExtensions[] = {
-        VK_KHR_SWAPCHAIN_EXTENSION_NAME
+        VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+        VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME
     };
 
 
@@ -197,7 +200,7 @@ bool teCreateSwapchain(te_struct_init* core) {
 
     VkSurfaceFormatKHR choosenFormat = surfaceFormat[0];
     for (uint32_t i = 0; i < formatCount; i++) {
-        if (surfaceFormat[i].format == VK_FORMAT_B8G8R8A8_SRGB &&surfaceFormat[i].colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
+        if (surfaceFormat[i].format == VK_FORMAT_B8G8R8A8_SRGB && surfaceFormat[i].colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
             choosenFormat = surfaceFormat[i];
             break;
         }
@@ -250,7 +253,56 @@ bool teCreateSwapchain(te_struct_init* core) {
 
     vkCreateSwapchainKHR(core->device, &createInfo, NULL, &core->swapchain);
 
+    uint32_t imageCount;
+    vkGetSwapchainImagesKHR(core->device, core->swapchain, &imageCount, NULL);
+
+    VkImage *images = malloc(sizeof(VkImage) * imageCount);
+    vkGetSwapchainImagesKHR(core->device, core->swapchain, &imageCount, images);
+    core->swapchainImageCount = imageCount;
+
+    core->swapchainImages = images;
+
+    // Saving
+    core->swapchainFormat = choosenFormat.format;
+    core->swapchainExtent = extent;
+
     return true;
 }
+
+bool teCreateImageViews(te_struct_init* core) {
+    core->swapchainImageView = malloc(sizeof(VkImage) * core->swapchainImageCount);
+
+    for (uint32_t i = 0; i < core->swapchainImageCount; i++) {
+        VkImageViewCreateInfo createInfo = {
+            .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+            .image = core->swapchainImages[i],
+            .viewType = VK_IMAGE_VIEW_TYPE_2D,
+            .format = core->swapchainFormat,
+            .components = {
+                .r = VK_COMPONENT_SWIZZLE_IDENTITY,
+                .g = VK_COMPONENT_SWIZZLE_IDENTITY,
+                .b = VK_COMPONENT_SWIZZLE_IDENTITY, .a = VK_COMPONENT_SWIZZLE_IDENTITY,
+
+            },
+            .subresourceRange = {
+                .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+                .baseMipLevel = 0,
+                .levelCount = 1,
+                .baseArrayLayer = 0,
+                .layerCount = 1,
+            },
+        };
+
+        if (vkCreateImageView(core->device, &createInfo, NULL, &core->swapchainImageView[i]) != VK_SUCCESS) {
+            printf("Image view couldn't be created!\n");
+            return false;
+        }
+    }
+
+    return true;
+
+}
+
+
 
 

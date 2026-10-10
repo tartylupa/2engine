@@ -1,6 +1,7 @@
 #ifndef GRAPHICS_H
 #define GRAPHICS_H
 
+#include <stdint.h>
 #include <vulkan/vulkan.h>
 #include <SDL3/SDL.h>
 #include <vulkan/vulkan_core.h>
@@ -25,7 +26,20 @@ typedef struct te_struct_init {
     VkQueue graphics;
     VkQueue present;
 
+    // swapchain and formats
     VkSwapchainKHR swapchain;
+    VkFormat swapchainFormat;
+    VkExtent2D swapchainExtent;
+    VkImageView* swapchainImageView;
+    VkImage* swapchainImages;
+
+
+    // Counts
+    uint32_t swapchainImageCount;
+
+    VkViewport viewport;
+
+    VkPipelineLayout pipelineLayout;
 
 } te_struct_init;
 
@@ -35,6 +49,8 @@ bool teVkCreateSurface(te_struct_init* core);
 bool teGetPhysicalDevice(te_struct_init* core);
 bool teFindQueueFamilies(te_struct_init* core);
 bool teGetLogicalDevice(te_struct_init *core);
+bool teCreateSwapchain(te_struct_init* core);
+bool teCreateImageViews(te_struct_init* core);
 
 
 
