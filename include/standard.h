@@ -1,8 +1,10 @@
+#pragma once
+
 #include <stdlib.h>
 #include <stdio.h>
 
-static inline char* loadToRampChar(const char* path) {
-FILE* file = fopen(path, "rb");
+static inline char* loadToRampChar(const char* path, size_t* size_out) {
+    FILE* file = fopen(path, "rb");
     if (!file) {
         printf("Couldn't open file: %s\n", path);
         return NULL;
@@ -25,6 +27,8 @@ FILE* file = fopen(path, "rb");
 
     size_t read_bytes = fread(buffer, 1, size, file);
     buffer[read_bytes] = '\0';
+
+    *size_out = read_bytes;
 
     fclose(file);
     return buffer;

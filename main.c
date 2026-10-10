@@ -1,3 +1,4 @@
+#include "include/draw.h"
 #include "include/standard.h"
 #include <SDL3/SDL_events.h>
 #include <SDL3/SDL_init.h>
@@ -7,6 +8,7 @@
 #include <SDL3/SDL.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <vulkan/vulkan_core.h>
 #include "include/graphics.h"
 #include "include/shaders.h"
 
@@ -32,16 +34,25 @@ int main(void) {
     teCreateImageViews(&g_core);
 
     te_shader_struct vertShader;
-    char* vertexShader = loadToRampChar("../shaders/main.vert.spv");
-    teCreateShaderModule(vertexShader, &vertShader, sizeof(vertexShader), &g_core);
+    size_t vertSize;
+    char* vertexShader = loadToRampChar("shaders/main.vert.spv", &vertSize);
+    teCreateShaderModule(vertexShader, &vertShader, vertSize, &g_core);
 
     te_shader_struct fragShader;
-    char* fragmentShader = loadToRampChar("../shaders/main.frag.spv");
-    teCreateShaderModule(fragmentShader, &fragShader, sizeof(fragmentShader), &g_core);
+    size_t fragSize;
+    char* fragmentShader = loadToRampChar("shaders/main.frag.spv", &fragSize);
+    teCreateShaderModule(fragmentShader, &fragShader, fragSize, &g_core);
 
-    if (!teCreateDynamicStatePipeline(&g_core)) {
+    if (!teCreateDynamicStatePipeline(&g_core, &vertShader, &fragShader)) {
         printf("Dynamic State Pipeline func error\n");
     }
+
+    te_command_struct cmdStruct;
+    teCreateCommandPool(&cmdStruct, &g_core);
+    teCreateCommandBuffer(&cmdStruct, &g_core);
+
+    te_draw_struct draw;
+    teDrawFuncInit(&g_core, &draw);
 
     bool running = true;
     SDL_Event event;
@@ -51,6 +62,9 @@ int main(void) {
                 running = false;
             }
         }
+        teDrawFuncWhile(&g_core, &draw, &cmdStruct);
+
+
     }
 
     return 0;

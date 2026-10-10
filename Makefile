@@ -6,7 +6,7 @@ LIBS = $(shell pkg-config --libs vulkan sdl3)
 SRCS = main.c $(wildcard src/*.c)
 OBJS = $(SRCS:.c=.o)
 
-TARGET = ./build/2engine
+TARGET = ./2engine
 
 $(TARGET): $(OBJS)
 	$(CC) $(LIBS) $(OBJS) -o $(TARGET)

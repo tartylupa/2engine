@@ -38,8 +38,10 @@ typedef struct te_struct_init {
     uint32_t swapchainImageCount;
 
     VkViewport viewport;
+    VkRect2D scissors;
 
     VkPipelineLayout pipelineLayout;
+    VkPipeline graphicsPipeline;
 
 } te_struct_init;
 
