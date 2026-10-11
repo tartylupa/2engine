@@ -3,6 +3,7 @@
 #include <vulkan/vulkan_core.h>
 #include "../include/graphics.h"
 #include "../include/shaders.h"
+#include "../include/buffer.h"
 
 int teCreateShaderModule(char* source, te_shader_struct* shader, size_t size, te_struct_init* core) {
     VkShaderModuleCreateInfo info = {
@@ -40,11 +41,25 @@ int teCreateDynamicStatePipeline(te_struct_init* core, te_shader_struct* vertSha
         .dynamicStateCount = (uint32_t)(sizeof(dynamicStates) / sizeof(dynamicStates[0])),
         .pDynamicStates = dynamicStates,
     };
+    VkVertexInputBindingDescription bindingDesc = {
+        .binding = 0,
+        .stride = sizeof(Vertex),
+        .inputRate = VK_VERTEX_INPUT_RATE_VERTEX,
+    };
+
+    VkVertexInputAttributeDescription attributeDesc = {
+        .binding = 0,
+        .location = 0,
+        .format = VK_FORMAT_R32G32B32_SFLOAT,
+        .offset = offsetof(Vertex, x),
+    };
 
     VkPipelineVertexInputStateCreateInfo vertexInputInfo = {
         .sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
-        .vertexBindingDescriptionCount = 0,
-        .vertexAttributeDescriptionCount = 0,
+        .vertexBindingDescriptionCount = 1,
+        .pVertexBindingDescriptions = &bindingDesc,
+        .vertexAttributeDescriptionCount = 1,
+        .pVertexAttributeDescriptions = &attributeDesc,
     };
 
     VkPipelineInputAssemblyStateCreateInfo inputAssembly = {

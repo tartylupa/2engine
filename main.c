@@ -1,3 +1,4 @@
+#include "include/buffer.h"
 #include "include/draw.h"
 #include "include/standard.h"
 #include <SDL3/SDL_events.h>
@@ -47,12 +48,24 @@ int main(void) {
         printf("Dynamic State Pipeline func error\n");
     }
 
+    Vertex vertices[] = {
+        { 0.0f, -0.5f, 0.0f },
+        {0.5f, 0.5f, 0.0f },
+        {-0.5f, 0.5f, 0.0f },
+    };
+
+    te_buffer_struct buffer;
+    teCreateBuffer(&buffer, &g_core, sizeof(vertices));
+    teAllocateMemory(&g_core, &buffer, sizeof(vertices));
+    teCopyMemory(&buffer, &g_core, vertices, sizeof(vertices));
+
     te_command_struct cmdStruct;
     teCreateCommandPool(&cmdStruct, &g_core);
     teCreateCommandBuffer(&cmdStruct, &g_core);
 
     te_draw_struct draw;
     teDrawFuncInit(&g_core, &draw);
+
 
     bool running = true;
     SDL_Event event;
@@ -62,7 +75,7 @@ int main(void) {
                 running = false;
             }
         }
-        teDrawFuncWhile(&g_core, &draw, &cmdStruct);
+        teDrawFuncWhile(&g_core, &draw, &cmdStruct, &buffer);
 
 
     }

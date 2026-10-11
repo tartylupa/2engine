@@ -1,5 +1,3 @@
 # 2engine
-# 2engine
-# 2engine
-# 2engine
-# 2engine
+
+Simple Vulkan 3D renderer.

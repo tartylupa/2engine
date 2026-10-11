@@ -1,4 +1,5 @@
 #include "../include/draw.h"
+#include "../include/buffer.h"
 #include <stdint.h>
 #include <vulkan/vulkan.h>
 #include <vulkan/vulkan_core.h>
@@ -25,7 +26,7 @@ void teDrawFuncInit(te_struct_init* core, te_draw_struct* draw) {
     draw->renderFinished = renderFinished;
 }
 
-void teDrawFuncWhile(te_struct_init* core, te_draw_struct* draw, te_command_struct* command) {
+void teDrawFuncWhile(te_struct_init* core, te_draw_struct* draw, te_command_struct* command, te_buffer_struct* buffer) {
     vkWaitForFences(core->device, 1, &draw->inFlightFence, VK_TRUE, UINT64_MAX);
     vkResetFences(core->device, 1, &draw->inFlightFence);
 
@@ -60,6 +61,8 @@ void teDrawFuncWhile(te_struct_init* core, te_draw_struct* draw, te_command_stru
 
     vkCmdBeginRendering(command->commandBuffer, &renderInfo);
     vkCmdBindPipeline(command->commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, core->graphicsPipeline);
+    VkDeviceSize offsets[] = { 0 };
+    vkCmdBindVertexBuffers(command->commandBuffer, 0, 1, &buffer->buffer, offsets);
 
     vkCmdSetViewport(command->commandBuffer, 0, 1, &core->viewport);
     vkCmdSetScissor(command->commandBuffer, 0, 1, &core->scissors);
